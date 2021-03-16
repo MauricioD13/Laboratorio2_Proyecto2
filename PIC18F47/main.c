@@ -8,6 +8,7 @@
 #include "timers/timers.h"
 #include "adc/adc.h"
 #include "uart/uart.h"
+#include "spi/spi.h"
 #include <xc.h>
 #include <PIC18F47K42.h>
 
@@ -44,6 +45,7 @@ void init_PIC(void){
     config_T2();
     config_ADC();
     config_UART();
+    config_SPI();
 }
 //GLOBAL VARIABLES 
 STATES states;
