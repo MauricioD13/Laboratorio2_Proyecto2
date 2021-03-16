@@ -50,3 +50,14 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# MPLAB compile files
+
+PIC18F47/build/
+PIC18F47/debug/
+PIC18F47/dist/
+PIC18F47/nbproject/
+PIC18F47/Makefile
+env/
+*.pdf
+*.csv
