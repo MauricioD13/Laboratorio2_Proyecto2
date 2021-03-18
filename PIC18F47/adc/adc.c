@@ -17,7 +17,7 @@ void config_ADC(void){
     //Channel selection
     ADPCHbits.ADPCH3 = 1; //ANB0
     //Voltage reference
-    ADREF = 0x00 
+    ADREF = 0x00;
     //Clock source
     ADCLK = 0x00; //Fosc/2 (1us)
     //Interrupt control
@@ -26,8 +26,8 @@ void config_ADC(void){
     ADCON0bits.FM = 1; //right justify
     //Conversion trigger
     //Disable autotrigger
-   
 }
+
 int read_ADC(void){
     int value;
     value = ADRESL | (ADRESH<<8);

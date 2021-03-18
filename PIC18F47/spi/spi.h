@@ -9,9 +9,10 @@
 #define	SPI_H
 
 #define SPI_FLAG SPI1INTFbits.SRMTIF
-#define SPI_TRANSMIT SPI1T1B 
+#define SPI_TRANSMIT SPI1TXB 
 
 void config_SPI(void);
-void send_to_DAC(int *value);
+void send_to_DAC(unsigned int *value);
+
 #endif	/* SPI_H */
 

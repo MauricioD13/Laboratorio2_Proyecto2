@@ -4,72 +4,85 @@
 
 void config_UART(){
      
-    
-    U1CON0bits.TXEN = 1;
-    U1CON0bits.RXEN = 1;
-    
     //TX
-    TRISCbits.TRISC2 = 0; // Output TX
+    U1CON0bits.TXEN = 1;
+    //TRISCbits.TRISC2 = 0; // Output TX
     ANSELCbits.ANSELC2 = 0; //As digital
+    RC6PPS = 0x13;// 0b00010011;
+    U1FIFObits.STPMD = 0;
+    U1FIFObits.TXBE = 1;
     
     //RX
+    U1CON0bits.RXEN = 1;
+    U1CON1bits.WUE = 1;
     TRISCbits.TRISC3 = 1; // Input RX
     ANSELCbits.ANSELC3 = 0; // As digital 
+    PIE3bits.U1RXIE = 1;
+    RC7PPS = 0x17; //0b00010111;
     
+    PIE3bits.U1IE = 1;
     
-    U1CON1 = 0x90; 
+    U1CON1bits.ON = 1;
     //Enable Serial port
+    
     //Wake-up Enable bit
+    U1CON2 = 0x00;
     
-    
+    PPSLOCKbits.PPSLOCKED = 0;
     //X = ((Fosc/Desired baud rate)/16) - 1
-    U1BRGL = 51;
+    
+    U1BRGL = 51;//19200
+    U1BRGH = 0;
     
     //Enable receiver interrupts
-    PIE3bits.U1RXIE = 1;
+    //PIE3bits.U1RXIE = 1;
    
 }
 
-void transmit_UART(int value){
+int transmit_UART(int value){
     
     if (value == 0){
-        TX_RESULT = 48;
+        TO_TRANSMIT = 48;
     }
     else if(value ==1){
-        TX_RESULT = 49;
+        TO_TRANSMIT = 49;
     }
     else if(value ==2){
-        TX_RESULT = 50;
+        TO_TRANSMIT = 50;
     }
     else if(value ==3){
-        TX_RESULT = 51;
+        TO_TRANSMIT = 51;
     }
     else if(value ==4){
-        TX_RESULT = 52;
+       TO_TRANSMIT = 52;
     }
     else if(value ==5){
-        TX_RESULT = 53;
+       TO_TRANSMIT = 53;
     }
     else if(value ==6){
-        TX_RESULT = 54;
+        TO_TRANSMIT = 54;
     }
     else if(value ==7){
-        TX_RESULT = 55;
+        TO_TRANSMIT = 55;
     }
     else if(value ==8){
-        TX_RESULT = 56;
+        TO_TRANSMIT = 56;
     }
     else if(value ==9){
-        TX_RESULT = 57;
+        TO_TRANSMIT = 57;
     }
     else if(value == 45){
-        TX_RESULT = 45;
+        TO_TRANSMIT = 45;
     }
     else if(value == 35){
-        TX_RESULT = 35;
+        TO_TRANSMIT = 13;
+    }
+    else{
+        
+        return 1;
     }
 }
 
 int receive_UART(){
-    return RX_RESULT;
+    return RECEIVED;
 }

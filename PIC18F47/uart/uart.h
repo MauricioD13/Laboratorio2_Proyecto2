@@ -7,13 +7,13 @@
 
 #ifndef UART_H
 #define	UART_H
-#define TX_FLAG U1FIFObits.TXBE
+#define TX_FLAG U1ERRIRbits.U1TXMTIF //'1' shift register is empty
 #define RX_BUFFER_EMPTY U1FIFObits.RXBE
-#define TX_RESULT U1RXB
-#define RX_RESULT U1TXB
+#define TO_TRANSMIT U1TXB
+#define RECEIVED U1RXB
 
 void config_UART();
-void transmit_UART(int value);
+int transmit_UART(int value);
 int receive_UART();
 
 #endif	/* UART_H */
