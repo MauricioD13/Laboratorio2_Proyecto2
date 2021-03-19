@@ -6,15 +6,17 @@
 
 
 void config_T1(void){
+    T1CON = 0x01; //500ns clock period
+    T1GCON = 0x00;
     T1CLK = 0x02;
     //T2PR = 200;
-    TMR1L = 56; 
-    T1GCON = 0x00;
-    T1CON = 0x31; //500ns clock period
+    TMR1L = 0; 
+    
+    
     
     
     PIE4bits.TMR1IE = 1;
-    IPR4bits.TMR1IP = 1;
+    IPR4bits.TMR1IP = 0;
     
     
     //T2HLT = 0x00; 

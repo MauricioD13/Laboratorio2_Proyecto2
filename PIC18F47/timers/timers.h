@@ -7,7 +7,7 @@
 
 #ifndef TIMERS_H
 #define	TIMERS_H
-
+#define HINTOSC_STATUS OSCSTATbits.HFOR
 typedef struct STATES{
     unsigned int ADC_number;
     short int integer;

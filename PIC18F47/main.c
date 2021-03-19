@@ -19,7 +19,7 @@
 // CONFIG1H
 #pragma config CLKOUTEN = OFF   // Clock out Enable bit (CLKOUT function is disabled)
 #pragma config PR1WAY = ON      // PRLOCKED One-Way Set Enable bit (PRLOCK bit can be cleared and set only once)
-#pragma config CSWEN = ON       // Clock Switch Enable bit (Writing to NOSC and NDIV is allowed)
+#pragma config CSWEN = OFF       // Clock Switch Enable bit (Writing to NOSC and NDIV is allowed)
 #pragma config FCMEN = ON       // Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor enabled)
 
 // CONFIG2L
@@ -75,8 +75,8 @@ int received;
 int cont_tx = 0;
 
 void __interrupt(irq(IRQ_TMR1),base(0x0008)) T1_isr(){
-    
-    
+    PORTDbits.RD0 ^= 1;
+    /*
     if(counters.base_counter == 10){
         
         //50 us multiplexing
@@ -90,7 +90,8 @@ void __interrupt(irq(IRQ_TMR1),base(0x0008)) T1_isr(){
       
     }
     TMR1L=0;
-    
+    */
+    TMR1L = 56;
     PIR4bits.TMR1IF = 0;
 }
 
@@ -101,12 +102,13 @@ void __interrupt(irq(IRQ_AD),base(0x0008)) ADC_isr(){
     states.read_ADC_flag = 1;
     PIR1bits.ADIF = 0;
 }
+/*
 void __interrupt(irq(IRQ_U1RX),base(0x0008)) UART_isr(){
     received = receive_UART();
     PORTAbits.RA0 = 1;
     //change_parameters(&counters,&received);
     
-}
+}*/
 
 void convert_number(STATES *states){
     double voltage  = (double)(0.001159667969)*states->ADC_number; 
@@ -129,27 +131,34 @@ void main(void) {
     int status_tx = 0;
     oscilator_module();
     config_T1();
-    config_ADC();
-    config_UART();
-    counters.count_to = 1;
+    //config_ADC();
+    //config_UART();
+    //config_SPI();
+    /*counters.count_to = 1;
     TRISAbits.TRISA0 = 0;
     ANSELAbits.ANSELA0 = 0;
     RECEIVED = 0;
+    INTCON0bits.GIE = 1;*/
+    TRISDbits.TRISD0 = 0;
+    ANSELDbits.ANSELD0 = 0;
     
     //MAIN LOOP
     while(1){
-        
-        if(states.read_ADC_flag == 1){
-            convert_number(&states);
+        //PORTDbits.RD0 ^= 1;
+        //if(states.read_ADC_flag == 1){
+           // convert_number(&states);
+            
             
             //SPI SEND
-            if(SPI_FLAG == 0){
-                SPI_TRANSMIT = (unsigned char) states.ADC_number;
-                received = 1;
-            }
+            
+            PORTEbits.RE0 = 0;
+            SPI_TRANSMIT  = 1;
+                
+            received = 1;
+            
             
             //UART SEND
-            if(TX_FLAG == 1 && states.value_transmitted == 0){
+            /*if(TX_FLAG == 1 && states.value_transmitted == 0){
                 
                 cont_tx++;
                 //Serial communication works sending each separate by '-' and when the number ends it send '#'
@@ -175,11 +184,12 @@ void main(void) {
                 }
                 TX_FLAG = 0;
             }
+            */
             
         }
-        received = receive_UART();
-        PORTAbits.RA0 = 1;
+        //received = receive_UART();
+        //PORTAbits.RA0 = 1;
         
-    }
+    //}
     
 }
