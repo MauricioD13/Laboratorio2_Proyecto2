@@ -71,44 +71,37 @@
 //GLOBAL VARIABLES 
 STATES states;
 COUNTERS counters;
-int received;
-int cont_tx = 0;
 
-void __interrupt(irq(IRQ_TMR1),base(0x0008)) T1_isr(){
-    PORTDbits.RD0 ^= 1;
-    /*
-    if(counters.base_counter == 10){
-        
-        //50 us multiplexing
-        counters.counter == counters.count_to ? START_CONVERSION = 1,counters.counter=0: counters.counter++;
-        counters.base_counter = 0;
-        
-    }else{
-        
-        
-        counters.base_counter++;
-      
-    }
-    TMR1L=0;
-    */
-    TMR1L = 56;
-    PIR4bits.TMR1IF = 0;
+int cont_tx = 0;
+int counter = 0;
+long int count_to = 0;
+int aux_cont;
+
+
+//Timer interrupt
+void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
+    //1us
+    counters.counter == counters.count_to ? START_CONVERSION = 1,PORTDbits.RD1 = 1,counters.counter = 0:counters.counter++;
+    
+    PIR3bits.TMR0IF = 0;
+    PORTDbits.RD1 = 0;
 }
 
+//ADC Interrupt
 void __interrupt(irq(IRQ_AD),base(0x0008)) ADC_isr(){
-    unsigned int value = (unsigned int) read_ADC();
-    states.value_transmitted = states.ADC_number == value ?  1 : 0; 
-    states.ADC_number = value;
+    states.ADC_number =  read_ADC();
     states.read_ADC_flag = 1;
     PIR1bits.ADIF = 0;
 }
 /*
+ * UART Interrupt
 void __interrupt(irq(IRQ_U1RX),base(0x0008)) UART_isr(){
     received = receive_UART();
     PORTAbits.RA0 = 1;
     //change_parameters(&counters,&received);
     
 }*/
+
 
 void convert_number(STATES *states){
     double voltage  = (double)(0.001159667969)*states->ADC_number; 
@@ -119,46 +112,42 @@ void convert_number(STATES *states){
 }
 
 void init_PIC(void){
-    
-    //config_ADC();
-    //config_UART();
-    //config_SPI();
+    config_T0();
+    config_ADC();
+    config_UART();
+    config_SPI();
 }
 
-void main(void) {
+int main(void) {
     
     INTCON0 = 0x80; 
     int status_tx = 0;
-    oscilator_module();
-    config_T1();
-    //config_ADC();
-    //config_UART();
-    //config_SPI();
-    /*counters.count_to = 1;
-    TRISAbits.TRISA0 = 0;
-    ANSELAbits.ANSELA0 = 0;
-    RECEIVED = 0;
-    INTCON0bits.GIE = 1;*/
+    oscillator_module();
+    init_PIC();
+    //Ecuacion para los valores: (x*25) - ((x-1))
+    
+    //Ports to measure time
     TRISDbits.TRISD0 = 0;
     ANSELDbits.ANSELD0 = 0;
+    TRISDbits.TRISD1 = 0;
+    ANSELDbits.ANSELD1 = 0;
+      
+    
+    int received = 3;
+    counters.count_to = (25*received) - (received-1);
+ 
+    PORTEbits.RE0 = 1;    
     
     //MAIN LOOP
     while(1){
-        //PORTDbits.RD0 ^= 1;
-        //if(states.read_ADC_flag == 1){
-           // convert_number(&states);
-            
-            
-            //SPI SEND
-            
-            PORTEbits.RE0 = 0;
-            SPI_TRANSMIT  = 1;
-                
-            received = 1;
-            
+        
+        if(states.read_ADC_flag == 1){
+            convert_number(&states);
+            RC3PPS = 0x1E;//SCK1
+            SPI_TRANSMIT = states.ADC_number;
             
             //UART SEND
-            /*if(TX_FLAG == 1 && states.value_transmitted == 0){
+            if(TX_FLAG == 1){
                 
                 cont_tx++;
                 //Serial communication works sending each separate by '-' and when the number ends it send '#'
@@ -184,12 +173,10 @@ void main(void) {
                 }
                 TX_FLAG = 0;
             }
-            */
+            
             
         }
-        //received = receive_UART();
-        //PORTAbits.RA0 = 1;
-        
-    //}
+    
+    }
     
 }

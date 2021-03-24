@@ -5,36 +5,61 @@
 
 
 
-void config_T1(void){
-    T1CON = 0x01; //500ns clock period
-    T1GCON = 0x00;
-    T1CLK = 0x02;
-    //T2PR = 200;
-    TMR1L = 0; 
+void config_T0(void){
+    /*
+     T0CON0
+        Enable timer
+        8-bit timer
+        Postscaler config*/
+    T0CON0 = 0x80; //500ns clock period
     
-    
-    
-    
-    PIE4bits.TMR1IE = 1;
-    IPR4bits.TMR1IP = 0;
-    
-    
-    //T2HLT = 0x00; 
-    /* 
-        Mode 1 free running - period pulse
-        Hardware gate, active-high  
-    */   
+    /*
+     T0CON1
+        Timer Clock Source
+        Asyncronization
+        Prescaler config*/
+    T0CON1 = 0x70;
+      
+    //Interrupts
+    PIE3bits.TMR0IE = 1; 
 }
 
-void change_parameters(COUNTERS *counters,int *parameter){
+void change_parameters(*count_to,int *parameter){
     
-    counters->count_to = *parameter;
+    *count_to = *parameter;
     
 }
-void oscilator_module (void){
+void oscillator_module (void){
+    /*
+     OSCCON1
+        New oscillator source 
+        New divider*/
     OSCCON1 = 0x60;
+    
+    /*
+     OSCCON2
+        Oscillator source
+        divider*/
     OSCCON2 = 0x60;
-    OSCFRQ = 0x05;
+    
+    /*
+     OSCCON3
+        Clock switch hold
+        Secondary oscillator power
+        */
+    OSCCON3 = 0x80;
+    
+    
+    OSCTUNE = 0x00;
+    
+    /*
+     OSCFRQ
+        Frequency selection*/
+    OSCFRQ = 0x08;
+    
+    /*
+      OSCEN
+        Oscillator manual enable*/
     OSCENbits.HFOEN = 1;
     
 }

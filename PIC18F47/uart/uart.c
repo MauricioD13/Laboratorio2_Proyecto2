@@ -13,25 +13,24 @@ void config_UART(){
     U1FIFObits.TXBE = 1;
     
     //RX
-    U1CON0bits.RXEN = 1;
+    U1CON0bits.RXEN = 1;//Rx Enable
     U1CON1bits.WUE = 1;
     TRISCbits.TRISC3 = 1; // Input RX
     ANSELCbits.ANSELC3 = 0; // As digital 
-    PIE3bits.U1RXIE = 1;
+    PIE3bits.U1RXIE = 1; //Interrupt enable
     RC7PPS = 0x17; //0b00010111;
     
     PIE3bits.U1IE = 1;
     
-    U1CON1bits.ON = 1;
+   
     //Enable Serial port
+    U1CON1bits.ON = 1;
     
-    //Wake-up Enable bit
     U1CON2 = 0x00;
     
-    PPSLOCKbits.PPSLOCKED = 0;
     //X = ((Fosc/Desired baud rate)/16) - 1
     
-    U1BRGL = 51;//19200
+    U1BRGL = 207;//19200
     U1BRGH = 0;
     
     //Enable receiver interrupts
@@ -75,7 +74,7 @@ int transmit_UART(int value){
         TO_TRANSMIT = 45;
     }
     else if(value == 35){
-        TO_TRANSMIT = 13;
+        TO_TRANSMIT = 35;
     }
     else{
         

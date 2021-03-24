@@ -9,27 +9,26 @@
 #define	TIMERS_H
 #define HINTOSC_STATUS OSCSTATbits.HFOR
 typedef struct STATES{
-    unsigned int ADC_number;
+    int ADC_number;
     short int integer;
     short int decimal_one;
     short int decimal_two;
     short int read_ADC_flag;
     short int value_transmitted;
 }STATES;
-
 typedef struct COUNTERS{
-    
-    short int base_counter;
-    short int counter;
-    int count_to;
+    long int base_counter;
+    long int counter;
+    int transmit_counter;
+    long int count_to;
     
 }COUNTERS;
 
-void config_T1(void);
+void config_T0(void);
 
-void change_parameters(COUNTERS *counters, int *parameter); // count_to = (micro_seconds/1000) * 2
+void change_parameters(*count_to, int *parameter); // count_to = (micro_seconds/1000) * 2
 
-void oscilator_module(void);
+void oscillator_module(void);
 
 #endif	/* TIMERS_H */
 
