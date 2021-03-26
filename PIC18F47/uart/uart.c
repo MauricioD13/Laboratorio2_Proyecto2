@@ -30,7 +30,7 @@ void config_UART(){
     
     //X = ((Fosc/Desired baud rate)/16) - 1
     
-    U1BRGL = 208;//19200
+    U1BRGL = 207;//19200
     U1BRGH = 0;
     
     //Enable receiver interrupts

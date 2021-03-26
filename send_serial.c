@@ -22,7 +22,7 @@ int main(int argc,char *argv[]){
     
     lpBuffer = atoi(argv[1]);
     
-    int number_bytes = 2;
+    int number_bytes = 1;
     long unsigned int status_bytes;
     Status = WriteFile(hComm,        // Handle to the Serial port
                    &lpBuffer,     // Data to be written to the port

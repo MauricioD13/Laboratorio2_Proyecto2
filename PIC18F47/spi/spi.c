@@ -37,8 +37,8 @@ void config_SPI(void){
     
     //Baud Rate
     SPI1BAUD = 138; //BAUD = (SPI clock/(2*Fbaud))-1  57600 bauds
-    SPI1INTEbits.SRMTIE = 0;
-    PIE2bits.SPI1TXIE = 0;
+    SPI1INTEbits.SRMTIE = 1;
+    PIE2bits.SPI1TXIE = 1;
 }
 
 void send_to_DAC(unsigned int *value){

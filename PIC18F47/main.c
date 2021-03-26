@@ -18,8 +18,8 @@
 
 // CONFIG1H
 #pragma config CLKOUTEN = OFF   // Clock out Enable bit (CLKOUT function is disabled)
-#pragma config PR1WAY = ON      // PRLOCKED One-Way Set Enable bit (PRLOCK bit can be cleared and set only once)
-#pragma config CSWEN = OFF       // Clock Switch Enable bit (Writing to NOSC and NDIV is allowed)
+#pragma config PR1WAY = ON     // PRLOCKED One-Way Set Enable bit (PRLOCK bit can be cleared and set only once)
+#pragma config CSWEN = OFF      // Clock Switch Enable bit (Writing to NOSC and NDIV is allowed)
 #pragma config FCMEN = ON       // Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor enabled)
 
 // CONFIG2L
@@ -34,7 +34,7 @@
 #pragma config BORV = VBOR_2P45 // Brown-out Reset Voltage Selection bits (Brown-out Reset Voltage (VBOR) set to 2.45V)
 #pragma config ZCD = OFF        // ZCD Disable bit (ZCD disabled. ZCD can be enabled by setting the ZCDSEN bit of ZCDCON)
 #pragma config PPS1WAY = ON     // PPSLOCK bit One-Way Set Enable bit (PPSLOCK bit can be cleared and set only once; PPS registers remain locked after one clear/set cycle)
-#pragma config STVREN = ON      // Stack Full/Underflow Reset Enable bit (Stack full/underflow will cause Reset)
+#pragma config STVREN = ON     // Stack Full/Underflow Reset Enable bit (Stack full/underflow will cause Reset)
 #pragma config DEBUG = OFF      // Debugger Enable bit (Background debugger disabled)
 #pragma config XINST = OFF      // Extended Instruction Set Enable bit (Extended Instruction Set and Indexed Addressing Mode disabled)
 
@@ -70,10 +70,13 @@
 //GLOBAL VARIABLES 
 STATES states;
 COUNTERS counters;
-
-
 int received = 1;
 int rx;
+int aux_states;
+short int cont = 0;
+char MSB_spi;
+char LSB_spi;
+int aux;
 //Timer interrupt
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
     //1us
@@ -101,13 +104,25 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
 }
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
-    SPI1TXB = 0xA2;
-    PIE2bits.SPI1TXIE = 0;
+    aux = states.ADC_number + 4096;
+    LSB_spi = (char) aux;
+    aux = aux>>8;
+    MSB_spi = (char) aux;
+    if(cont == 0){
+        SPI1TXB = MSB_spi;
+        cont++;
+    }
+    else if(cont == 1){
+        SPI1TXB = LSB_spi;
+        cont = 0;
+    }
+    
     PIR2bits.SPI1TXIF = 0;
+    
 }
 
 void convert_number(STATES *states){
-    double voltage  = (double)(0.001159667969)*states->ADC_number; 
+    double voltage  = (double)(0.001220703125)*states->ADC_number; 
     (states->integer) = (short int) (voltage);
     (states->decimal_one)= (short int)((voltage*10)-((states->integer)*10));
     (states->decimal_two) = (short int)((voltage*100)-((states->integer *100)+(states->decimal_one *10)));
@@ -127,8 +142,9 @@ int main(void) {
     int status_tx = 0;
     oscillator_module();
     counters.count_to = (25*received) - (received-1);
+    
     states.spi_transmit = 0;
-    SPI1TXB = 57;
+   // SPI1TXB = 57;
     init_PIC();
     //Ecuacion para los valores: (x*25) - ((x-1))
     
@@ -139,12 +155,13 @@ int main(void) {
     ANSELDbits.ANSELD1 = 0;
     
     
- 
+    //SPI1TXB = 0x1F;
     //PORTEbits.RE0 = 1;    
     
     //MAIN LOOP
     while(1){
-        
+
+            
         if(states.read_ADC_flag == 1){
             convert_number(&states);
             
@@ -176,10 +193,17 @@ int main(void) {
                 }
                 TX_FLAG = 0;
             }
-            if(states.spi_transmit==0){
-                    PIE2bits.SPI1TXIE = 1;
-                    SPI1TXB = 0x1F;
-            }
+            /*
+            if(states.spi_transmit==1){
+                    if(cont == 0){
+                        SPI1TXB = 0xFF;
+                        cont++;
+                    }else if(cont == 1){
+                        SPI1TXB = 0x00;
+                        cont = 0;
+        
+    }
+            }*/
             
             
             //UART RECEPTION
@@ -190,7 +214,7 @@ int main(void) {
             else if(counters.cont_rx == 2){
                 rx = (rx<<8);
                 received = (received) |(rx);
-                counters.count_to = (long int)(25*received) - (received-1);
+                counters.count_to = (25*received) - (received-1);
                 counters.counter = 0;
                 counters.cont_rx = 0;
                 rx = 0;
