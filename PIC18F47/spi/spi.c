@@ -5,14 +5,14 @@ void config_SPI(void){
     
     //Enable SPI
     SPI1CON0 = 0x82;
-    SPI1CON1 = 0x80;
+    SPI1CON1 = 0x20;
     SPI1CON2 = 0x02;
 
     //Clock selection
     SPI1CLK = 0x01; //HFINTOSC
     
         
-    SPI1TCNTL = 2; //Transfer counter LSB   16 bits SPI1TWIDTH+(SPI1TCNT*8)
+    SPI1TCNTL = 16; //Transfer counter LSB   16 bits SPI1TWIDTH+(SPI1TCNT*8)
     SPI1TWIDTH = 0;
     
     // Output signals config
@@ -28,15 +28,17 @@ void config_SPI(void){
     //CS configuration
     TRISEbits.TRISE0 = 0;// As output
     ANSELEbits.ANSELE0 = 0; //As digital
-    PORTEbits.RE0 = 1;
+    PORTEbits.RE0 = 0;
     
     //LDAC Configuration
     TRISBbits.TRISB4 = 0;// As output
     ANSELBbits.ANSELB4 = 0; //As digital
-    PORTBbits.RB4 = 1;
+    PORTBbits.RB4 = 0;
     
     //Baud Rate
     SPI1BAUD = 138; //BAUD = (SPI clock/(2*Fbaud))-1  57600 bauds
+    SPI1INTEbits.SRMTIE = 0;
+    PIE2bits.SPI1TXIE = 0;
 }
 
 void send_to_DAC(unsigned int *value){

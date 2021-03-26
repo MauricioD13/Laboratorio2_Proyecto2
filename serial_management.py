@@ -1,14 +1,16 @@
 
 
 import serial      
-        
-port = serial.Serial('COM9', 19200, timeout=0,write_timeout = 0)
+import os
+
 result = []
 
 flag_init = 0;
 while(1):
+    
     option = int(input("[1] Leer puerto serial\n[2] Enviar cambio de parametros\n[3]Salir\n"))
     if(option==1):
+        port = serial.Serial('COM9', 19200, timeout=0,write_timeout = 0)
         while True:
             
             data = port.read()
@@ -25,10 +27,11 @@ while(1):
                         result = []
             except KeyboardInterrupt: 
                 break
-
+        port.close();
     elif(option == 2):
+        number_send = str(input("Ingrese numero de veces a contar 100us (0 a 10): "))
+        os.system("send_serial.exe "+ number_send);
         
-        port.write(7)
 
     else:
         break

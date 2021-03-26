@@ -67,24 +67,22 @@
 // #pragma config statements should precede project file includes.
 // Use project enums instead of #define for ON and OFF.
 
-
 //GLOBAL VARIABLES 
 STATES states;
 COUNTERS counters;
 
-int cont_tx = 0;
-int counter = 0;
-long int count_to = 0;
-int aux_cont;
 
-
+int received = 1;
+int rx;
 //Timer interrupt
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
     //1us
-    counters.counter == counters.count_to ? START_CONVERSION = 1,PORTDbits.RD1 = 1,counters.counter = 0:counters.counter++;
     
-    PIR3bits.TMR0IF = 0;
+    counters.counter == counters.count_to ? START_CONVERSION = 1,PORTDbits.RD1 = 1,counters.counter = 0:counters.counter++;
     PORTDbits.RD1 = 0;
+    PIR3bits.TMR0IF = 0;
+    
+    
 }
 
 //ADC Interrupt
@@ -93,15 +91,20 @@ void __interrupt(irq(IRQ_AD),base(0x0008)) ADC_isr(){
     states.read_ADC_flag = 1;
     PIR1bits.ADIF = 0;
 }
-/*
- * UART Interrupt
-void __interrupt(irq(IRQ_U1RX),base(0x0008)) UART_isr(){
-    received = receive_UART();
-    PORTAbits.RA0 = 1;
-    //change_parameters(&counters,&received);
+void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
     
-}*/
-
+    rx = U1RXB;
+    counters.cont_rx++;
+            
+    //change_parameters(&counters,&received);
+    PIR3bits.U1RXIF = 0;
+}
+void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
+    
+    SPI1TXB = 0xA2;
+    PIE2bits.SPI1TXIE = 0;
+    PIR2bits.SPI1TXIF = 0;
+}
 
 void convert_number(STATES *states){
     double voltage  = (double)(0.001159667969)*states->ADC_number; 
@@ -123,6 +126,9 @@ int main(void) {
     INTCON0 = 0x80; 
     int status_tx = 0;
     oscillator_module();
+    counters.count_to = (25*received) - (received-1);
+    states.spi_transmit = 0;
+    SPI1TXB = 57;
     init_PIC();
     //Ecuacion para los valores: (x*25) - ((x-1))
     
@@ -131,51 +137,65 @@ int main(void) {
     ANSELDbits.ANSELD0 = 0;
     TRISDbits.TRISD1 = 0;
     ANSELDbits.ANSELD1 = 0;
-      
     
-    int received = 3;
-    counters.count_to = (25*received) - (received-1);
+    
  
-    PORTEbits.RE0 = 1;    
+    //PORTEbits.RE0 = 1;    
     
     //MAIN LOOP
     while(1){
         
         if(states.read_ADC_flag == 1){
             convert_number(&states);
-            RC3PPS = 0x1E;//SCK1
-            SPI_TRANSMIT = states.ADC_number;
+            
             
             //UART SEND
             if(TX_FLAG == 1){
                 
-                cont_tx++;
+                counters.cont_tx++;
                 //Serial communication works sending each separate by '-' and when the number ends it send '#'
-                if(cont_tx == 1){
+                if(counters.cont_tx == 1){
                     status_tx = transmit_UART(states.integer);
                 }
-                else if (cont_tx == 2){
+                else if (counters.cont_tx == 2){
                     status_tx = transmit_UART(45);
                 }
-                else if (cont_tx == 3){
+                else if (counters.cont_tx == 3){
                     status_tx = transmit_UART(states.decimal_one);
                 }
-                else if (cont_tx == 4){
+                else if (counters.cont_tx == 4){
                     status_tx = transmit_UART(45);
                 }
-                else if (cont_tx == 5){
+                else if (counters.cont_tx == 5){
                     status_tx = transmit_UART(states.decimal_two);
                 }
-                else if (cont_tx == 6){
+                else if (counters.cont_tx == 6){
                     status_tx = transmit_UART(35);
                     states.value_transmitted = 1;
-                    cont_tx = 0;
+                    counters.cont_tx = 0;
                 }
                 TX_FLAG = 0;
             }
+            if(states.spi_transmit==0){
+                    PIE2bits.SPI1TXIE = 1;
+                    SPI1TXB = 0x1F;
+            }
             
             
+            //UART RECEPTION
         }
+        if(counters.cont_rx == 1){
+            received = rx;
+            }
+            else if(counters.cont_rx == 2){
+                rx = (rx<<8);
+                received = (received) |(rx);
+                counters.count_to = (long int)(25*received) - (received-1);
+                counters.counter = 0;
+                counters.cont_rx = 0;
+                rx = 0;
+        }
+        
     
     }
     

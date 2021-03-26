@@ -4,12 +4,13 @@
 #include "adc.h"
 
 void config_ADC(void){
-    
+    //Enable ADC
+    ADCON0 = 0x90;
     ADCON1 = 0x00;
     ADCON2 = 0x00;
     ADSTAT = 0x00;
-    //Enable ADC
-    ADCON0 = 0x90;
+    
+    
     
     //Port channel
     TRISBbits.TRISB0 = 1;

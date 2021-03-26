@@ -4,33 +4,33 @@
 
 void config_UART(){
      
+    //UART config
+    U1CON0 = 0x30;
+    U1CON1 = 0x80;
+    U1CON2 = 0x00;
+    U1FIFO = 0x00;
+    U1ERRIR = 0x00;
+    U1ERRIE = 0x00;
+    U1UIR = 0x00;
+    
     //TX
-    U1CON0bits.TXEN = 1;
-    //TRISCbits.TRISC2 = 0; // Output TX
+    TRISCbits.TRISC2 = 0; // Output TX
     ANSELCbits.ANSELC2 = 0; //As digital
     RC6PPS = 0x13;// 0b00010011;
     U1FIFObits.STPMD = 0;
     U1FIFObits.TXBE = 1;
     
     //RX
-    U1CON0bits.RXEN = 1;//Rx Enable
-    U1CON1bits.WUE = 1;
-    TRISCbits.TRISC3 = 1; // Input RX
-    ANSELCbits.ANSELC3 = 0; // As digital 
+    TRISCbits.TRISC7 = 1; // Input RX
+    ANSELCbits.ANSELC7 = 0; // As digital
     PIE3bits.U1RXIE = 1; //Interrupt enable
-    RC7PPS = 0x17; //0b00010111;
-    
     PIE3bits.U1IE = 1;
+    U1RXPPS = 0x17; //0b00010111;
     
-   
-    //Enable Serial port
-    U1CON1bits.ON = 1;
-    
-    U1CON2 = 0x00;
     
     //X = ((Fosc/Desired baud rate)/16) - 1
     
-    U1BRGL = 207;//19200
+    U1BRGL = 208;//19200
     U1BRGH = 0;
     
     //Enable receiver interrupts

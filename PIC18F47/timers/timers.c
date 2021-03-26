@@ -19,16 +19,12 @@ void config_T0(void){
         Asyncronization
         Prescaler config*/
     T0CON1 = 0x70;
-      
+    PMD1bits.TMR0MD = 0;
     //Interrupts
     PIE3bits.TMR0IE = 1; 
 }
 
-void change_parameters(*count_to,int *parameter){
-    
-    *count_to = *parameter;
-    
-}
+
 void oscillator_module (void){
     /*
      OSCCON1
