@@ -9,13 +9,15 @@
 #define	TIMERS_H
 #define HINTOSC_STATUS OSCSTATbits.HFOR
 typedef struct STATES{
+    double voltage;
     int ADC_number;
     short int integer;
-    short int decimal_one;
-    short int decimal_two;
+    short int decimal;
+    short int channel_convert;
     short int read_ADC_flag;
     short int value_transmitted;
-    short int spi_transmit;
+    short int channel_flag;
+    short int convert_done;
 }STATES;
 typedef struct COUNTERS{
     long int base_counter;

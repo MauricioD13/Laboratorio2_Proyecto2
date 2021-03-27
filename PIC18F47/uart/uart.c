@@ -73,8 +73,11 @@ int transmit_UART(int value){
     else if(value == 45){
         TO_TRANSMIT = 45;
     }
-    else if(value == 35){
-        TO_TRANSMIT = 35;
+    else if(value == 65){
+        TO_TRANSMIT = 65;
+    }
+    else if(value==66){
+        TO_TRANSMIT = 66;
     }
     else{
         

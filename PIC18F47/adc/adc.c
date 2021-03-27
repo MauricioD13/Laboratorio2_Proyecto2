@@ -17,7 +17,7 @@ void config_ADC(void){
     ANSELBbits.ANSELB0 = 1;
     
     //Channel selection
-    ADPCHbits.ADPCH3 = 1; //ANB0
+    ADPCH = 0x00; //ANB0
     
     //Voltage reference
     ADREF = 0x00;

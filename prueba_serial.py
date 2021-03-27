@@ -9,6 +9,7 @@ flag_init = 0;
 while True:
 
     data = port.read()
-    
-    print(data)
+    data = int.from_bytes(data,"big")
+    if(data!= 0):
+        print(data)
     
