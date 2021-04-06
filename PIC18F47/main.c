@@ -184,7 +184,6 @@ int main(void) {
                 counters.cont_tx++;
                 if(counters.cont_tx==1){
                     TO_TRANSMIT = states.integer;
-                    
                 }
                 else if(counters.cont_tx == 2){
                     TO_TRANSMIT = states.decimal;
