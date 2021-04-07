@@ -79,12 +79,16 @@ char MSB_spi;
 char LSB_spi;
 int aux_tx = 0;
 int aux;
+
+
+
 //Timer interrupt
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
     //1us
     
     counters.counter == counters.count_to ? START_CONVERSION = 1,PORTDbits.RD1 = 1,counters.counter = 0:counters.counter++;
     PORTDbits.RD1 = 0;
+    INTCON0bits.GIEL = 1;
     PIR3bits.TMR0IF = 0;
     
     
@@ -93,6 +97,7 @@ void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
 
 //ADC Interrupt
 void __interrupt(irq(IRQ_AD),base(0x0008)) ADC_isr(){
+    PORTDbits.RD2 = 1;
     states.ADC_number =  read_ADC();
     states.read_ADC_flag = 1;
     PIR1bits.ADIF = 0;
@@ -104,6 +109,15 @@ void __interrupt(irq(IRQ_AD),base(0x0008)) ADC_isr(){
         ADPCH = 0;
         channel = 0;
     }
+    
+    PORTDbits.RD2 = 0;
+}
+void convert_number(STATES *states){
+    double voltage  = (double)(0.001220703125)*states->ADC_number;
+    (states->integer) = (short int) (voltage);
+    (states->decimal)= (short int)((voltage*100)-((states->integer)*100));
+    //(states->decimal_two) = (short int)((voltage*100)-((states->integer *100)+(states->decimal_one *10)));
+    
 }
 void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
     
@@ -132,14 +146,6 @@ void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
 }
 
-void convert_number(STATES *states){
-    double voltage  = (double)(0.001220703125)*states->ADC_number;
-    (states->integer) = (short int) (voltage);
-    (states->decimal)= (short int)((voltage*100)-((states->integer)*100));
-    //(states->decimal_two) = (short int)((voltage*100)-((states->integer *100)+(states->decimal_one *10)));
-    
-}
-
 void init_PIC(void){
     config_T0();
     config_ADC();
@@ -149,7 +155,21 @@ void init_PIC(void){
 
 int main(void) {
     
-    INTCON0 = 0x80; 
+    INTCON0 = 0xE0; 
+    IPR0 = 0x00;
+    IPR1 = 0x00;
+    IPR2 = 0x00;
+    IPR3 = 0x00; //TIMER 0 High priority UART RX High priority 0x88
+    IPR4 = 0x00;
+    IPR5 = 0x00;
+    IPR6 = 0x00;
+    IPR7 = 0x00;
+    IPR8 = 0x00;
+    IPR9 = 0x00;
+    IPR10 = 0x00;
+    
+    
+    
     int status_tx = 0;
     oscillator_module();
     counters.count_to = (25*received) - (received-1);
@@ -246,7 +266,7 @@ int main(void) {
                 counters.cont_rx = 0;
                 rx = 0;
         }
-        
+        PORTDbits.RD3 = INTCON0bits.GIEL;
     
     }
     
