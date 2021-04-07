@@ -5,7 +5,8 @@ import os
 
 result = []
 
-flag_init = 0;
+flag_init_A = 0;
+flag_init_B = 0;
 while(1):
     
     option = int(input("[1] Leer puerto serial\n[2] Enviar cambio de parametros\n[3]Salir\n"))
@@ -20,27 +21,27 @@ while(1):
             data = port.read()
             try:
                 if(data.decode() == 'A'):
-                    flag_init = 1;
-                elif(flag_init == 1 and data.decode()!='-' and data.decode()!=''):
+                    flag_init_A = 1;
+                elif(flag_init_A == 1 and data.decode()!='-' and data.decode()!=''and data.decode()!='A' and data.decode()!='B'):
                     result.append(data.decode());
                     
                     if(len(result)==3):
-                        flag_init = 0;
+                        flag_init_A = 0;
                         result = int(result[0]) + int(result[1])/10 + int(result[2])/100
-                        print(f"VOLTAGE:{result}\t")
+                        print(f"VOLTAGE A:{result}\r\t",end="")
                         
                         fileA.write(str(i)+","+str(result)+"\n")
                         result = []
                         i+=1
                 if(data.decode() == 'B'):
-                    flag_init = 1;
-                elif(flag_init == 1 and data.decode()!='-' and data.decode()!=''):
-                    result.append(data.decode());
+                    flag_init_B = 1
+                elif(flag_init_B == 1 and data.decode()!='-' and data.decode()!='' and (data.decode()!='A' or data.decode()!='B')):
+                    result.append(data.decode())
                     
                     if(len(result)==3):
-                        flag_init = 0;
+                        flag_init_B = 0;
                         result = int(result[0]) + int(result[1])/10 + int(result[2])/100
-                        print(f"VOLTAGE:{result}\n")
+                        print(f"VOLTAGE B:{result}")
                         
                         fileB.write(str(i)+","+str(result)+"\n")
                         result = []

@@ -15,9 +15,10 @@ void config_ADC(void){
     //Port channel
     TRISBbits.TRISB0 = 1;
     ANSELBbits.ANSELB0 = 1;
-    
+    TRISBbits.TRISB1 = 1;
+    ANSELBbits.ANSELB1 = 1;
     //Channel selection
-    ADPCH = 0x00; //ANB0
+    ADPCH = 0x00; //ANA0
     
     //Voltage reference
     ADREF = 0x00;
