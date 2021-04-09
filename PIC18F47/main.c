@@ -108,23 +108,28 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
 }
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
+    aux = states.ADC_number + 4096;
+    
+   LSB_spi = (char)aux; 
+   aux = aux>>8;
+   MSB_spi = (char)aux;
     PORTBbits.RB4 = 1;
     if(cont == 0){
         PORTBbits.RB4 = 0;
         PORTBbits.RB4 = 1;
-        
         PORTEbits.RE0 = 1;
         PORTEbits.RE0 = 0;
-        SPI1TXB = 0x00;
+        
+        SPI1TXB = LSB_spi;
         cont++;
+        
     }
     else if(cont == 1){
-        SPI1TXB = 0x19;
+        
+        SPI1TXB = MSB_spi;
         cont = 0;
+        
     }
-    
-    
-    PIR2bits.SPI1TXIF = 0;
     
     
     PIR2bits.SPI1TXIF = 0;
@@ -174,6 +179,7 @@ int main(void) {
 
             
         if(states.read_ADC_flag == 1){
+            
             convert_number(&states);
             
             
@@ -202,7 +208,9 @@ int main(void) {
                     states.value_transmitted = 1;
                     counters.cont_tx = 0;
                 }
+                
                 TX_FLAG = 0;
+                
             }
             
             /*
