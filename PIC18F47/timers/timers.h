@@ -10,6 +10,7 @@
 #define HINTOSC_STATUS OSCSTATbits.HFOR
 typedef struct STATES{
     int ADC_number;
+    int filtered_number;
     short int integer;
     short int decimal_one;
     short int decimal_two;

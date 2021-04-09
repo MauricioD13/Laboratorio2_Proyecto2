@@ -9,6 +9,7 @@
 #include "adc/adc.h"
 #include "uart/uart.h"
 #include "spi/spi.h"
+#include "filter/filter.h"
 #include <xc.h>
 #include <PIC18F47K42.h>
 
@@ -80,7 +81,7 @@ int aux;
 short int aux1;
 short int aux2;
 int spi_result;
-
+int x = 0;
 //Timer interrupt
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
     //1us
@@ -141,8 +142,8 @@ void convert_number(STATES *states){
     (states->integer) = (short int) (voltage);
     (states->decimal_one)= (short int)((voltage*10)-((states->integer)*10));
     (states->decimal_two) = (short int)((voltage*100)-((states->integer *100)+(states->decimal_one *10)));
-    
-}
+    }
+
 
 
 void init_PIC(void){
@@ -157,7 +158,7 @@ int main(void) {
     INTCON0 = 0x80; 
     int status_tx = 0;
     oscillator_module();
-    counters.count_to = (25*received) - (received-1);
+    counters.count_to = (10*received) - (received-1);
     
     states.spi_transmit = 0;
    // SPI1TXB = 57;
@@ -182,9 +183,25 @@ int main(void) {
             
             convert_number(&states);
             
-            
-            //UART SEND
             if(TX_FLAG == 1){
+                
+                counters.cont_tx++;
+                //Serial communication works sending each separate by '-' and when the number ends it send '#'
+                if(counters.cont_tx == 1){
+                    x = states.filtered_number>>8;
+                    TO_TRANSMIT = (char)x;
+                }
+                else if (counters.cont_tx == 2){
+                    
+                    TO_TRANSMIT = (char)states.filtered_number;
+                    states.value_transmitted = 1;
+                    counters.cont_tx = 0;
+                }
+                TX_FLAG = 0;
+                
+            }
+            //UART SEND
+            /*if(TX_FLAG == 1){
                 
                 counters.cont_tx++;
                 //Serial communication works sending each separate by '-' and when the number ends it send '#'
@@ -211,22 +228,8 @@ int main(void) {
                 
                 TX_FLAG = 0;
                 
-            }
-            
-            /*
-            if(states.spi_transmit==1){
-                    if(cont == 0){
-                        SPI1TXB = 0xFF;
-                        cont++;
-                    }else if(cont == 1){
-                        SPI1TXB = 0x00;
-                        cont = 0;
-        
-    }
             }*/
-            
-            
-            //UART RECEPTION
+            states.filtered_number = filter_FIR(states.ADC_number);
         }
         
         if(counters.cont_rx == 1){
@@ -235,7 +238,7 @@ int main(void) {
             else if(counters.cont_rx == 2){
                 rx = (rx<<8);
                 received = (received) |(rx);
-                counters.count_to = (25*received) - (received-1);
+                counters.count_to = (10*received) - (received-1);
                 counters.counter = 0;
                 counters.cont_rx = 0;
                 rx = 0;
