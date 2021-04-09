@@ -73,10 +73,14 @@ COUNTERS counters;
 int received = 1;
 int rx;
 int aux_states;
-short int cont = 0;
+int cont = 0;
 char MSB_spi;
 char LSB_spi;
 int aux;
+short int aux1;
+short int aux2;
+int spi_result;
+
 //Timer interrupt
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
     //1us
@@ -104,18 +108,24 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
 }
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
-    aux = states.ADC_number + 4096;
-    LSB_spi = (char) aux;
-    aux = aux>>8;
-    MSB_spi = (char) aux;
+    PORTBbits.RB4 = 1;
     if(cont == 0){
-        SPI1TXB = MSB_spi;
+        PORTBbits.RB4 = 0;
+        PORTBbits.RB4 = 1;
+        
+        PORTEbits.RE0 = 1;
+        PORTEbits.RE0 = 0;
+        SPI1TXB = 0x00;
         cont++;
     }
     else if(cont == 1){
-        SPI1TXB = LSB_spi;
+        SPI1TXB = 0x19;
         cont = 0;
     }
+    
+    
+    PIR2bits.SPI1TXIF = 0;
+    
     
     PIR2bits.SPI1TXIF = 0;
     
@@ -128,6 +138,7 @@ void convert_number(STATES *states){
     (states->decimal_two) = (short int)((voltage*100)-((states->integer *100)+(states->decimal_one *10)));
     
 }
+
 
 void init_PIC(void){
     config_T0();
@@ -193,6 +204,7 @@ int main(void) {
                 }
                 TX_FLAG = 0;
             }
+            
             /*
             if(states.spi_transmit==1){
                     if(cont == 0){
@@ -208,6 +220,7 @@ int main(void) {
             
             //UART RECEPTION
         }
+        
         if(counters.cont_rx == 1){
             received = rx;
             }
@@ -219,6 +232,7 @@ int main(void) {
                 counters.cont_rx = 0;
                 rx = 0;
         }
+        
         
     
     }
