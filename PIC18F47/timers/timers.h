@@ -10,13 +10,13 @@
 #define HINTOSC_STATUS OSCSTATbits.HFOR
 typedef struct STATES{
     double voltage;
-    int ADC_number;
-    short int integer;
-    short int decimal_one;
-    short int decimal_two;
+    int ADC_number[2];
+    short int integer[2];
+    short int decimal_one[2];
+    short int decimal_two[2];
     short int channel_convert;
     short int read_ADC_flag;
-    short int value_transmitted;
+    short int value_convert;
     short int channel_flag;
     short int convert_done;
 }STATES;

@@ -75,16 +75,23 @@ int received = 1;
 int rx;
 int aux_states;
 short int cont = 0;
-char MSB_spi;
-char LSB_spi;
+char MSB_spi_A;
+char LSB_spi_A;
+char MSB_spi_B;
+char LSB_spi_B;
 int aux_tx = 0;
-int aux;
-
+int aux_A;
+int aux_B;
+int j=0;
 void convert_number(STATES *states){
-    double voltage  = (double)(0.001220703125)*states->ADC_number;
-    (states->integer) = (short int) (voltage);
-    (states->decimal_one)= (short int)((voltage*10)-((states->integer)*10));
-    (states->decimal_two) = (short int)((voltage*100)-((states->integer *100)+(states->decimal_one *10)));
+    for(int i = 0; i < 2 ; i++){
+        
+        double voltage  = (double)(0.001220703125)*states->ADC_number[i];
+        (states->integer[i]) = (short int) (voltage);
+        (states->decimal_one[i])= (short int)((voltage*10)-((states->integer[i])*10));
+        (states->decimal_two[i]) = (short int)((voltage*100)-((states->integer[i] *100)+(states->decimal_one[i] *10)));
+        
+    }
     
 }
 
@@ -102,21 +109,23 @@ void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
 //ADC Interrupt
 void __interrupt(irq(IRQ_AD),base(0x0008)) ADC_isr(){
     
-    states.ADC_number =  read_ADC();
-    states.read_ADC_flag = 1;
+    
+    
     PIR1bits.ADIF = 0;
     states.channel_flag = channel;
-    channel = channel == 0 ? 1:0;
-    ADPCH = channel;
-    /*if(channel==0){
+  
+    if(channel==0){
+        states.ADC_number[channel] =  read_ADC();
         ADPCH = 1;
         channel = 1;
+        
     }else if(channel == 1)
     {
+        states.ADC_number[channel] =  read_ADC();
+        states.read_ADC_flag = 1;
         ADPCH = 0;
         channel = 0;
-    }*/
-    
+    }
     PIR1bits.ADIF = 0;
 }
 
@@ -124,24 +133,47 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
     
     rx = U1RXB;
     counters.cont_rx++;
-            
-    //change_parameters(&counters,&received);
     PIR3bits.U1RXIF = 0;
 }
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
-    aux = states.ADC_number + 4096;
-    LSB_spi = (char) aux;
-    aux = aux>>8;
-    MSB_spi = (char) aux;
-    if(cont == 0){
-        SPI1TXB = LSB_spi;
-        cont++;
-    }
-    else if(cont == 1){
-        SPI1TXB = MSB_spi;
-        cont = 0;
-    }
+        aux_A = states.ADC_number[0] + 4096;
+        LSB_spi_A = (char) aux_A;
+        aux_A = aux_A>>8;
+        MSB_spi_A = (char) aux_A;
+
+        aux_B = states.ADC_number[1] + 36864; //Change channel 
+        LSB_spi_B = (char) aux_B;
+        aux_B = aux_B>>8;
+        MSB_spi_B = (char) aux_B;
+        
+        if(cont == 0){
+            PORTBbits.RB4 = 0;//LDAC
+            PORTBbits.RB4 = 1;
+
+            PORTEbits.RE0 = 1;//CS
+            PORTEbits.RE0 = 0;
+            SPI1TXB = LSB_spi_A;
+            cont++;
+        }
+        else if(cont == 1){
+            SPI1TXB = MSB_spi_A;
+            cont++;
+        }
+        else if(cont == 2){
+            
+            PORTBbits.RB4 = 0;//LDAC
+            PORTBbits.RB4 = 1;
+
+            PORTEbits.RE0 = 1;//CS
+            PORTEbits.RE0 = 0;
+            SPI1TXB = LSB_spi_B;
+            cont++;
+        }
+        else if(cont == 3){
+            SPI1TXB = MSB_spi_B;
+            cont = 0;
+        }
     
     PIR2bits.SPI1TXIF = 0;
     
@@ -177,7 +209,7 @@ int main(void) {
     states.channel_convert = 0;
     states.channel_flag = 1;
     states.convert_done = 0;
-    states.value_transmitted = 1;
+    states.value_convert = 0;
    
     init_PIC();
     //Ecuacion para los valores: (x*25) - ((x-1))
@@ -192,70 +224,46 @@ int main(void) {
             
         if(states.read_ADC_flag == 1){
             
-            if(states.value_transmitted==1 && states.convert_done == 0){
+            if(states.convert_done == 0){
                 
                 states.channel_convert = states.channel_flag;
                 convert_number(&states);
                 states.convert_done = 1;
-                
+                states.value_convert = 1;
             }
-            //UART SEND
-            /*if(TX_FLAG == 1 && states.convert_done == 1){
-                
-                states.value_transmitted = 0;
-                counters.cont_tx++;
-                
-                if(counters.cont_tx==1){
-                    TO_TRANSMIT = states.integer;
-                }
-                else if(counters.cont_tx == 2){
-                    TO_TRANSMIT = states.decimal;
-                    
-                }
-                else if(counters.cont_tx == 3){
-                    if(states.channel_convert == 0){
-                        TO_TRANSMIT = 100;
-                    }else if(states.channel_convert == 1){
-                        TO_TRANSMIT = 101;
-                    }
-                    states.value_transmitted = 1;
-                    states.convert_done = 0;
-                    counters.cont_tx = 0;
-                }
-                
-            }*/
             
-            if(TX_FLAG == 1 && states.convert_done == 1){
-                
-                counters.cont_tx++;
-                //Serial communication works sending each separate by '-' and when the number ends it send '#'
-                if(counters.cont_tx == 1){
-                    status_tx = transmit_UART(states.integer);
-                }
-                else if (counters.cont_tx == 2){
-                    status_tx = transmit_UART(45);
-                }
-                else if (counters.cont_tx == 3){
-                    status_tx = transmit_UART(states.decimal_one);
-                }
-                else if (counters.cont_tx == 4){
-                    status_tx = transmit_UART(45);
-                }
-                else if (counters.cont_tx == 5){
-                    status_tx = transmit_UART(states.decimal_two);
-                }
-                else if (counters.cont_tx == 6){
-                    if(channel==0){
-                        status_tx = transmit_UART(65);
-                    }else{
-                        status_tx = transmit_UART(66);
+            
+                if(TX_FLAG == 1 && states.convert_done == 1){
+                    
+                    counters.cont_tx++;
+                    //Serial communication works sending each separate by '-' and when the number ends it send '#'
+                    if(counters.cont_tx == 1){
+                        status_tx = transmit_UART(states.integer[j]);
                     }
-                    states.value_transmitted = 1;
-                    states.convert_done = 0;
-                    counters.cont_tx = 0;
-                }
+
+                    else if (counters.cont_tx == 2){
+                        status_tx = transmit_UART(states.decimal_one[j]);
+                    }
+                    else if (counters.cont_tx == 3){
+                        status_tx = transmit_UART(states.decimal_two[j]);
+                    }
+                    else if (counters.cont_tx == 4){
+                        if(j==0){
+                            TO_TRANSMIT = 44;
+                            j++;
+                        }else{
+                            TO_TRANSMIT = 35;
+                            j=0;
+                        }
+                        
+                        states.convert_done = 0;
+                        counters.cont_tx = 0;
+                    }
+                
                 TX_FLAG = 0;
-            }
+                }
+                
+            
         }
         
         if(counters.cont_rx == 1){
