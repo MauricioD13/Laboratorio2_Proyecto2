@@ -83,7 +83,10 @@ int aux_tx = 0;
 int aux_A;
 int aux_B;
 int j=0;
+<<<<<<< HEAD
 
+=======
+>>>>>>> f340c2c9f0f3cf99bb41d946435a10f811d33121
 void convert_number(STATES *states){
     for(int i = 0; i < 2 ; i++){
         
@@ -231,7 +234,10 @@ int main(void) {
                 convert_number(&states);
                 states.convert_done = 1;
                 states.value_convert = 1;
+<<<<<<< HEAD
                 
+=======
+>>>>>>> f340c2c9f0f3cf99bb41d946435a10f811d33121
             }
             
             
