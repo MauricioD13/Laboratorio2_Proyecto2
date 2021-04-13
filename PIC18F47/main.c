@@ -83,10 +83,7 @@ int aux_tx = 0;
 int aux_A;
 int aux_B;
 int j=0;
-<<<<<<< HEAD
 
-=======
->>>>>>> f340c2c9f0f3cf99bb41d946435a10f811d33121
 void convert_number(STATES *states){
     for(int i = 0; i < 2 ; i++){
         
@@ -141,16 +138,7 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
 }
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
-        aux_A = states.ADC_number[0] + 4096;
-        LSB_spi_A = (char) aux_A;
-        aux_A = aux_A>>8;
-        MSB_spi_A = (char) aux_A;
-
-        aux_B = states.ADC_number[1] + 36864; //Change channel 
-        LSB_spi_B = (char) aux_B;
-        aux_B = aux_B>>8;
-        MSB_spi_B = (char) aux_B;
-        
+        PORTBbits.RB4 = 1;
         if(cont == 0){
             PORTBbits.RB4 = 0;//LDAC
             PORTBbits.RB4 = 1;
@@ -178,7 +166,7 @@ void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
             SPI1TXB = MSB_spi_B;
             cont = 0;
         }
-    
+        
     PIR2bits.SPI1TXIF = 0;
     
 }
@@ -221,11 +209,20 @@ int main(void) {
     //Ports to measure time
     TRISD = 0x00;
     ANSELD = 0x00;
-    
+    TRISAbits.TRISA4 = 0;
+    ANSELAbits.ANSELA4 = 0;
     //MAIN LOOP
     while(1){
 
-            
+        aux_A = states.ADC_number[0] + 4096;
+                LSB_spi_A = (char) aux_A;
+                aux_A = aux_A>>8;
+                MSB_spi_A = (char) aux_A;
+
+                aux_B = states.ADC_number[1] + 36864; //Change channel 
+                LSB_spi_B = (char) aux_B;
+                aux_B = aux_B>>8;
+                MSB_spi_B = (char) aux_B;
         if(states.read_ADC_flag == 1){
             
             if(states.convert_done == 0){
@@ -234,10 +231,7 @@ int main(void) {
                 convert_number(&states);
                 states.convert_done = 1;
                 states.value_convert = 1;
-<<<<<<< HEAD
                 
-=======
->>>>>>> f340c2c9f0f3cf99bb41d946435a10f811d33121
             }
             
             
@@ -280,7 +274,7 @@ int main(void) {
             else if(counters.cont_rx == 2){
                 rx = (rx<<8);
                 received = (received) |(rx);
-                counters.count_to = (25*received) - (received-1);
+                counters.count_to = (12*received) + 1;
                 counters.counter = 0;
                 counters.cont_rx = 0;
                 rx = 0;
