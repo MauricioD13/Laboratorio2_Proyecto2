@@ -10,7 +10,8 @@
 #define HINTOSC_STATUS OSCSTATbits.HFOR
 typedef struct STATES{
     int ADC_number;
-    int filtered_number;
+    long filtered_number_FIR;
+    int filtered_number_IIR;
     short int integer;
     short int decimal_one;
     short int decimal_two;
@@ -22,7 +23,8 @@ typedef struct COUNTERS{
     long int base_counter;
     long int counter;
     int transmit_counter;
-    long int count_to;
+    short int count_to;
+    short int count_to_high;
     short int cont_tx;
     short int cont_rx;
     short int cont_spi;

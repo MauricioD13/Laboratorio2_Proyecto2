@@ -71,7 +71,7 @@
 //GLOBAL VARIABLES 
 STATES states;
 COUNTERS counters;
-int received = 1;
+int received = 10;
 int rx;
 int aux_states;
 int cont = 0;
@@ -82,6 +82,8 @@ short int aux1;
 short int aux2;
 int spi_result;
 int x = 0;
+coef_iir_2_ord ir;
+
 //Timer interrupt
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
     //1us
@@ -109,11 +111,7 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
 }
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
-    aux = states.ADC_number + 4096;
     
-   LSB_spi = (char)aux; 
-   aux = aux>>8;
-   MSB_spi = (char)aux;
     PORTBbits.RB4 = 1;
     if(cont == 0){
         PORTBbits.RB4 = 0;
@@ -151,19 +149,27 @@ void init_PIC(void){
     config_ADC();
     config_UART();
     config_SPI();
+    
+   
 }
 
 int main(void) {
-    
+    float num[5] = { 0.9536743164063,    1.907348632813,    2.861022949219,    1.907348632813,
+     0.9536743164063};
+    float den[5] = {1,          1.953125,      2.8583984375,    1.861572265625,
+      0.908447265625};
+    float w[5] = {0,0,0,0,0};
     INTCON0 = 0x80; 
     int status_tx = 0;
     oscillator_module();
-    counters.count_to = (10*received) - (received-1);
-    
+    counters.count_to = (25 *received) - ((received*2)-1);
+    //44 IIR
+    //+-23 FIR
     states.spi_transmit = 0;
    // SPI1TXB = 57;
     init_PIC();
-    //Ecuacion para los valores: (x*25) - ((x-1))
+    inicializar_iir(num,den,w,&ir);
+   
     
     //Ports to measure time
     TRISDbits.TRISD0 = 0;
@@ -177,7 +183,11 @@ int main(void) {
     
     //MAIN LOOP
     while(1){
-
+        aux = states.filtered_number_IIR + 4096;
+        
+        LSB_spi = (char)aux; 
+        aux = aux>>8;
+        MSB_spi = (char)aux;
             
         if(states.read_ADC_flag == 1){
             
@@ -188,12 +198,12 @@ int main(void) {
                 counters.cont_tx++;
                 //Serial communication works sending each separate by '-' and when the number ends it send '#'
                 if(counters.cont_tx == 1){
-                    x = states.filtered_number>>8;
+                    x = (char)states.filtered_number_IIR>>8;
                     TO_TRANSMIT = (char)x;
                 }
                 else if (counters.cont_tx == 2){
                     
-                    TO_TRANSMIT = (char)states.filtered_number;
+                    TO_TRANSMIT = (char)states.filtered_number_IIR;
                     states.value_transmitted = 1;
                     counters.cont_tx = 0;
                 }
@@ -229,7 +239,9 @@ int main(void) {
                 TX_FLAG = 0;
                 
             }*/
-            states.filtered_number = filter_FIR(states.ADC_number);
+            
+            //states.filtered_number_FIR = filter_FIR(states.ADC_number);
+            states.filtered_number_IIR = (int)filtrarIIR((float)states.ADC_number,&ir);
         }
         
         if(counters.cont_rx == 1){

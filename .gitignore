@@ -52,7 +52,10 @@ Mkfile.old
 dkms.conf
 
 # MPLAB compile files
-
+build/
+debug/
+dist/
+nbproject/
 PIC18F47/build/
 PIC18F47/debug/
 PIC18F47/dist/
