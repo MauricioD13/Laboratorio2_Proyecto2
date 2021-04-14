@@ -17,10 +17,10 @@ typedef struct STATES{
     short int decimal_two;
     short int read_ADC_flag;
     short int value_transmitted;
-    short int spi_transmit;
+    short int timer_flag;
 }STATES;
 typedef struct COUNTERS{
-    long int base_counter;
+    long int high_counter;
     long int counter;
     int transmit_counter;
     short int count_to;

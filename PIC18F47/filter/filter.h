@@ -16,6 +16,7 @@ typedef struct coef_iir_2_ord {// este va a ser el nombre de la estructura
 } coef_iir_2_ord;// este va a ser el nombre del typedef
 
 long filter_FIR(int in);
+long filtrarFIR2(int in);
 void inicializar_iir(float*num, float*den, float*w, coef_iir_2_ord* ir);
 
 float filtrarIIR(float in,coef_iir_2_ord* ir);

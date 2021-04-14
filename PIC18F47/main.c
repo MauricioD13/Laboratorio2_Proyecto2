@@ -71,7 +71,7 @@
 //GLOBAL VARIABLES 
 STATES states;
 COUNTERS counters;
-int received = 10;
+int received = 4;
 int rx;
 int aux_states;
 int cont = 0;
@@ -88,8 +88,8 @@ coef_iir_2_ord ir;
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
     //1us
     
-    counters.counter == counters.count_to ? START_CONVERSION = 1,PORTDbits.RD1 = 1,counters.counter = 0:counters.counter++;
-    PORTDbits.RD1 = 0;
+    counters.counter == counters.count_to ? counters.high_counter++,counters.counter = 0:counters.counter++;
+    
     PIR3bits.TMR0IF = 0;
     
     
@@ -163,12 +163,11 @@ int main(void) {
     int status_tx = 0;
     oscillator_module();
     counters.count_to = (25 *received) - ((received*2)-1);
-    //44 IIR
-    //+-23 FIR
-    states.spi_transmit = 0;
+    
+    
    // SPI1TXB = 57;
     init_PIC();
-    inicializar_iir(num,den,w,&ir);
+    //inicializar_iir(num,den,w,&ir);
    
     
     //Ports to measure time
@@ -183,7 +182,8 @@ int main(void) {
     
     //MAIN LOOP
     while(1){
-        aux = states.filtered_number_IIR + 4096;
+        PORTDbits.RD0 = 1;
+        aux = states.filtered_number_FIR + 4096;
         
         LSB_spi = (char)aux; 
         aux = aux>>8;
@@ -191,57 +191,37 @@ int main(void) {
             
         if(states.read_ADC_flag == 1){
             
-            convert_number(&states);
+            
+            //convert_number(&states);
             
             if(TX_FLAG == 1){
                 
                 counters.cont_tx++;
                 //Serial communication works sending each separate by '-' and when the number ends it send '#'
                 if(counters.cont_tx == 1){
-                    x = (char)states.filtered_number_IIR>>8;
+                    x = (char)states.filtered_number_FIR>>8;
                     TO_TRANSMIT = (char)x;
                 }
                 else if (counters.cont_tx == 2){
                     
-                    TO_TRANSMIT = (char)states.filtered_number_IIR;
+                    TO_TRANSMIT = (char)states.filtered_number_FIR;
                     states.value_transmitted = 1;
                     counters.cont_tx = 0;
                 }
                 TX_FLAG = 0;
                 
             }
-            //UART SEND
-            /*if(TX_FLAG == 1){
-                
-                counters.cont_tx++;
-                //Serial communication works sending each separate by '-' and when the number ends it send '#'
-                if(counters.cont_tx == 1){
-                    status_tx = transmit_UART(states.integer);
-                }
-                else if (counters.cont_tx == 2){
-                    status_tx = transmit_UART(45);
-                }
-                else if (counters.cont_tx == 3){
-                    status_tx = transmit_UART(states.decimal_one);
-                }
-                else if (counters.cont_tx == 4){
-                    status_tx = transmit_UART(45);
-                }
-                else if (counters.cont_tx == 5){
-                    status_tx = transmit_UART(states.decimal_two);
-                }
-                else if (counters.cont_tx == 6){
-                    status_tx = transmit_UART(35);
-                    states.value_transmitted = 1;
-                    counters.cont_tx = 0;
-                }
-                
-                TX_FLAG = 0;
-                
-            }*/
+          
             
-            //states.filtered_number_FIR = filter_FIR(states.ADC_number);
-            states.filtered_number_IIR = (int)filtrarIIR((float)states.ADC_number,&ir);
+            states.filtered_number_FIR = filtrarFIR2(states.ADC_number);
+            //states.filtered_number_IIR = (int)filtrarIIR((float)states.ADC_number,&ir);
+        }
+        
+        if(counters.high_counter >= 13){
+                PORTDbits.RD1 = 1;
+                START_CONVERSION = 1;
+                counters.high_counter = 0;
+                PORTDbits.RD1 = 0;
         }
         
         if(counters.cont_rx == 1){
@@ -250,14 +230,15 @@ int main(void) {
             else if(counters.cont_rx == 2){
                 rx = (rx<<8);
                 received = (received) |(rx);
-                counters.count_to = (10*received) - (received-1);
+                counters.count_to = (25*received) - (received-1);
+                
                 counters.counter = 0;
                 counters.cont_rx = 0;
                 rx = 0;
         }
         
         
-    
+    PORTDbits.RD0 = 0;
     }
     
 }

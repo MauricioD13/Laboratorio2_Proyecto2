@@ -6,8 +6,8 @@ const char B[BL] = {
     2,12,42,71,71,42,12,2
 };
 
-int x[BL];
-int k = 0;
+volatile int x[BL];
+volatile int k = 0;
 
 long filter_FIR(int in)
 {
@@ -36,7 +36,21 @@ long filter_FIR(int in)
   return y>>8 ; //si no es multiplo de 2^n divida por el factor de normalización adecuado a su filtro.
 }
 
+long filtrarFIR2(int in)
+{
+  int i = 0;
+  x[k] = in;
+  int inx = k;
+  long y = 0;
+  for (i = 0; i < BL; ++i) {
+    y += (long)x[inx] * (long)B[i];// verifique que para su filtro no exista overflow.
+    inx = inx != 0 ? inx - 1 : BL - 1;
+  }
+  k++;
+  k = (k >= BL) ? 0 : k;
+  return y >> 8; //si no es multiplo de 2^n divida por el factor de normalización adecuado a su filtro.
 
+}
 void inicializar_iir(float*num, float*den, float*w, coef_iir_2_ord* ir)
 {
   for (int i = 0; i < 5; i++) {
