@@ -1,20 +1,49 @@
 
 #include "filter.h"
 #include <PIC18F47k42.h>
+float gain_1 = 0.3633;
+float num_1[3] = {1,-2,1};
+float den_1[3] = {1,0,0.4531};
+float w_1[3] = {0,0,0};
+
+float gain_2 = 0.2617;
+float num_2[3] = { 1,-2,1};
+float den_2[3] = {1,0,0.0469};
+float w_2[3] = {0,0,0};
+
+/*
+#define BL 12
+int B[BL] = {
+      0,    0,    4,   11,   21,   28,   28,   21,   11,    4,    0,    0
+};*/
+/*
 #define BL 8
-const char B[BL] = {
+int B[BL] = {
     2,12,42,71,71,42,12,2
+};*/
+/*
+#define BL  18
+int B[BL] = {
+      0,    0,    1,    1,    0,    0,    0,   24,   48,   48,   24,    0,
+      0,    0,    1,    1,    0,    0
+};*/
+/*
+#define BL  31
+int B[BL] = {
+     0,    0,    0,    0,    1,    0,    0,    0,    2,    4,    0,    0,
+      0,   11,   38,   52,   38,   11,    0,    0,    0,    4,    2,    0,
+      0,    0,    1,    0,    0,    0,    0
 };
 
-volatile int x[BL];
-volatile int k = 0;
+int x[BL];
+int k = 0;
 
 long filter_FIR(int in)
 {
   int i = 0;
   x[k] = in;
   int inx = k;
-  char *apuntadorcoef = &B[0];
+  int *apuntadorcoef = &B[0];
   int *apuntadorarrc = &x[inx];
   // mucho cuidado con el tamaño de los apuntadores DEBE COINCIDIR CON EL DEL ARREGLO o no va a funcionar.
   
@@ -48,9 +77,10 @@ long filtrarFIR2(int in)
   }
   k++;
   k = (k >= BL) ? 0 : k;
-  return y >> 8; //si no es multiplo de 2^n divida por el factor de normalización adecuado a su filtro.
+  y = y>>8;
+  return y; //si no es multiplo de 2^n divida por el factor de normalización adecuado a su filtro.
 
-}
+}*/
 void inicializar_iir(float*num, float*den, float*w, coef_iir_2_ord* ir)
 {
   for (int i = 0; i < 5; i++) {
@@ -59,39 +89,26 @@ void inicializar_iir(float*num, float*den, float*w, coef_iir_2_ord* ir)
     ir->w[i] = w[i];
   }
 }
-float filtrarIIR(float in, coef_iir_2_ord* ir) {
-    
-  float y;
-  /*Ecuacion implementada:
-  w0=a0*x-a1*w1-a2*w2 donde x es la entrada  a denota a los denominadores notese que a0 es siempre 1 por lo que da lo mismo quitarlo
-  y =b0*w0+b1*w1+b2*w2
-  w2=w1
-  w1=w0
-  */
-  ir->w[0] = (ir->den[0] * in) - (ir->den[1] * ir->w[1]) - (ir->den[2] * ir->w[2]) - (ir->den[3] * ir->w[3]) - (ir->den[4] * ir->w[4]); // OJO QUE EL MENOS YA ESTA EN LA ECUACION ver en  la ayuda de filterDesign en "show filter structure" si esta es o no la ecuación que implementan en ese software
-  y = ((ir->num[0] * ir->w[0]) + (ir->num[1] * ir->w[1]) + (ir->num[2] * ir->w[2])+ (ir->num[3] * ir->w[3])+ (ir->num[4] * ir->w[4]));
-  ir->w[4] = ir->w[3];
-  ir->w[3] = ir ->w[2];
-  ir->w[2] = ir->w[1];//debe ser primero este
-  ir->w[1] = ir->w[0];// y luego este para no sobreescribir
-  return y;
+
+float filtrarIIR(float in) {
+  float y,y1,yout;
+  
+  /*w[0] = (den[0] * in * gain) - (den[1] * w[1]) - (den[2] * w[2]); 
+  y = ((num[0] * w[0]) + (num[1] * w[1]) + (num[2] * w[2]));
+  w[2] = w[1];
+  w[1] = w[0];*/
+
+  w_1[0] = (den_1[0] * (in * 0.3)) - (den_1[1] * w_1[1]) - (den_1[2] * w_1[2]);  
+  y1 = ((num_1[0] * w_1[0]) + (num_1[1] * w_1[1]) + (num_1[2] * w_1[2]));
+  w_1[2] = w_1[1];
+  w_1[1] = w_1[0];
+  
+  //y1 = y1 + 500;
+  w_2[0] = (den_2[0] * (y1* 0.2)) - (den_2[1] * w_2[1]) - (den_2[2] * w_2[2]); 
+  yout = ((num_2[0] * w_2[0]) + (num_2[1] * w_2[1]) + (num_2[2] * w_2[2]));
+  w_2[2] = w_2[1];
+  w_2[1] = w_2[0];
+  
+  return yout;
 }
 
-
-/*long int filtrarFIR2(int in)
-{
-  long out;
-  int i = 0;
-  x[k] = in;
-  int inx = k;
-  float y = 0;
-  for (i = 0; i < BL; ++i) {
-    y += (float)x[inx] * (float)B[i];// verifique que para su filtro no exista overflow.
-    inx = inx != 0 ? inx - 1 : BL - 1;
-  }
-  k++;
-  k = (k >= BL) ? 0 : k;
-  out = (long)y;
-  return out >> 8; //si no es multiplo de 2^n divida por el factor de normalización adecuado a su filtro.
-
-}*/

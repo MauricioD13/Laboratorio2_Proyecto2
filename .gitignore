@@ -64,3 +64,4 @@ PIC18F47/Makefile
 env/
 *.pdf
 *.csv
+datos_filtros/

@@ -19,7 +19,7 @@ long filter_FIR(int in);
 long filtrarFIR2(int in);
 void inicializar_iir(float*num, float*den, float*w, coef_iir_2_ord* ir);
 
-float filtrarIIR(float in,coef_iir_2_ord* ir);
+float filtrarIIR(float in);
 
 #endif	/* FILTER_H */
 
