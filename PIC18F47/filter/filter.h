@@ -9,6 +9,7 @@
 #define	FILTER_H
 
 #define FIR_FILTER_LENGTH 8
+
 typedef struct coef_iir_2_ord {// este va a ser el nombre de la estructura
   float num[5]; // ponga aquí su numerador
   float den[5]; // ponga aquí su denominador

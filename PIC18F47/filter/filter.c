@@ -27,7 +27,7 @@ int B[BL] = {
       0,    0,    1,    1,    0,    0,    0,   24,   48,   48,   24,    0,
       0,    0,    1,    1,    0,    0
 };*/
-/*
+
 #define BL  31
 int B[BL] = {
      0,    0,    0,    0,    1,    0,    0,    0,    2,    4,    0,    0,
@@ -64,7 +64,7 @@ long filter_FIR(int in)
   k = (k >= BL) ? 0 : k;
   return y>>8 ; //si no es multiplo de 2^n divida por el factor de normalización adecuado a su filtro.
 }
-
+/*
 long filtrarFIR2(int in)
 {
   int i = 0;

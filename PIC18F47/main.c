@@ -81,12 +81,11 @@ int aux;
 short int aux1;
 short int aux2;
 int spi_result;
-int x = 0;
 coef_iir_2_ord ir;
 
 //Timer interrupt
 void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
-    //1us
+    //4us
     
     counters.counter == counters.count_to ? counters.high_counter++,counters.counter = 0:counters.counter++;
     
@@ -106,8 +105,7 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
     
     rx = U1RXB;
     counters.cont_rx++;
-            
-    //change_parameters(&counters,&received);
+
     PIR3bits.U1RXIF = 0;
 }
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
@@ -136,22 +134,12 @@ void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
 }
 
-void convert_number(STATES *states){
-    double voltage  = (double)(0.001220703125)*states->ADC_number; 
-    (states->integer) = (short int) (voltage);
-    (states->decimal_one)= (short int)((voltage*10)-((states->integer)*10));
-    (states->decimal_two) = (short int)((voltage*100)-((states->integer *100)+(states->decimal_one *10)));
-    }
-
-
 
 void init_PIC(void){
     config_T0();
     config_ADC();
     config_UART();
     config_SPI();
-    
-   
 }
 
 int main(void) {
@@ -161,10 +149,7 @@ int main(void) {
     oscillator_module();
     counters.count_to = (25 *received) - ((received*2)-1);
     
-    
-   // SPI1TXB = 57;
     init_PIC();
-   
    
     int k = 0;
     //Ports to measure time
@@ -179,7 +164,6 @@ int main(void) {
     
     //MAIN LOOP
     while(1){
-        PORTDbits.RD0 = 1;
         
         if(states.read_ADC_flag == 1){
             
@@ -187,42 +171,45 @@ int main(void) {
             //convert_number(&states);
             
             if(TX_FLAG == 1){
+                
                 int tx;
                 counters.cont_tx++;
                 //Serial communication works sending each separate by '-' and when the number ends it send '#'
                 if(counters.cont_tx == 1){
+                    
                     tx = (short int)states.filtered_number_FIR>>8;
                     TO_TRANSMIT = (short int)tx;
+                    
                 }
                 else if (counters.cont_tx == 2){
                     
                     TO_TRANSMIT = (short int)states.filtered_number_FIR;
-                    
                 }
                 else if(counters.cont_tx == 3){
                     TO_TRANSMIT = 10;
                     
                     counters.cont_tx = 0;
                 }
+                
                 TX_FLAG = 0;
                 
             }
           
             if(states.filter_flag == 1){
-                states.filtered_number_IIR = (int)filtrarIIR((float)states.ADC_number);
+                states.filtered_number_FIR = filter_FIR(states.ADC_number);
                 
                 states.filter_flag = 0;
-                aux = states.filtered_number_IIR + 4096;
+                aux = states.filtered_number_FIR + 4096;
                 LSB_spi = (char)aux; 
                 aux = aux>>8;
                 MSB_spi = (char)aux;
             
                 
             }
-            //states.filtered_number_IIR = (int)filtrarIIR((float)states.ADC_number,&ir);
+           
         }
         
-        if(counters.high_counter >= 13){
+        if(counters.high_counter >= 12){
                 PORTDbits.RD1 = 1;
                 START_CONVERSION = 1;
                 counters.high_counter = 0;
@@ -242,8 +229,6 @@ int main(void) {
                 rx = 0;
         }
         
-        
-    PORTDbits.RD0 = 0;
     }
     
 }
