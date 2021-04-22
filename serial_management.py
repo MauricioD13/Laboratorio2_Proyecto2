@@ -28,25 +28,8 @@ if(option==1):
                 i+=1
         fileA.close()
 elif(option == 2):
-        graficas = ["plot.txt"]
-
-        file = open(graficas[0],'r')
-        x_array = []
-        y_array = []
-        grafica_procesamiento.guardar(file,x_array,y_array,'.',',')
-        np_x = x_array[0]
-        np_y = y_array[0]
-        sample_result = 0
-        i = 0
-        samples = []
-        while(sample_result<3000):
-            sample_result = -0.6237*(i**2)+34.963*i+758
-            print(sample_result)
-            samples.append(sample_result)
-            i+=1
-        print(samples)
-
-        #grafica_procesamiento.graphics(graficas,",",".","1","Serial plot","Tiempo[s]","ADC[samples]","5000","lineal")
+        graficas = ["IIR_Altas.txt"]
+        grafica_procesamiento.graphics(graficas,"tab",",","1","Serial plot","Tiempo[s]","ADC[samples]","5000","lineal")
 
 
 elif(option == 3):

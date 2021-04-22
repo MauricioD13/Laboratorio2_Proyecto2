@@ -111,11 +111,11 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
     
-    PORTBbits.RB4 = 1;
+    PORTBbits.RB4 = 1;//LDAC
     if(cont == 0){
         PORTBbits.RB4 = 0;
         PORTBbits.RB4 = 1;
-        PORTEbits.RE0 = 1;
+        PORTEbits.RE0 = 1;//CS
         PORTEbits.RE0 = 0;
         
         SPI1TXB = LSB_spi;
@@ -174,7 +174,7 @@ int main(void) {
                 
                 int tx;
                 counters.cont_tx++;
-                //Serial communication works sending each separate by '-' and when the number ends it send '#'
+                
                 if(counters.cont_tx == 1){
                     
                     tx = (short int)states.filtered_number_FIR>>8;
@@ -196,8 +196,9 @@ int main(void) {
             }
           
             if(states.filter_flag == 1){
+                PORTDbits.RD0 = 1;
                 states.filtered_number_FIR = filter_FIR(states.ADC_number);
-                
+                PORTDbits.RD0 = 0;
                 states.filter_flag = 0;
                 aux = states.filtered_number_FIR + 4096;
                 LSB_spi = (char)aux; 
@@ -209,7 +210,7 @@ int main(void) {
            
         }
         
-        if(counters.high_counter >= 12){
+        if(counters.high_counter >= 21){
                 PORTDbits.RD1 = 1;
                 START_CONVERSION = 1;
                 counters.high_counter = 0;
