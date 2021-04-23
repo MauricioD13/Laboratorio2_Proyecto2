@@ -85,6 +85,8 @@ int aux_B;
 int j=0;
 
 void convert_number(STATES *states){
+    //Convert number from ADC into number with one integer and two decimal
+    //This function spend a lot of execution time 
     for(int i = 0; i < 2 ; i++){
         
         double voltage  = (double)(0.001220703125)*states->ADC_number[i];
@@ -109,12 +111,12 @@ void __interrupt(irq(IRQ_TMR0),base(0x0008)) T0_isr(){
 
 //ADC Interrupt
 void __interrupt(irq(IRQ_AD),base(0x0008)) ADC_isr(){
-    
-    
-    
+    PORTDbits.RD0 = 1;
+    PORTDbits.RD0 = 0;
     PIR1bits.ADIF = 0;
     states.channel_flag = channel;
-  
+    
+    
     if(channel==0){
         states.ADC_number[channel] =  read_ADC();
         ADPCH = 1;
@@ -138,8 +140,9 @@ void __interrupt(irq(IRQ_U1RX),base(0x0008)) U1RX_isr(){
 }
 void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
     
-        PORTBbits.RB4 = 1;
+    
         if(cont == 0){
+            //End of second number -> 2 bytes
             PORTBbits.RB4 = 0;//LDAC
             PORTBbits.RB4 = 1;
 
@@ -149,11 +152,15 @@ void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
             cont++;
         }
         else if(cont == 1){
+            
             SPI1TXB = MSB_spi_A;
             cont++;
-        }
-        else if(cont == 2){
             
+        }
+        
+        else if(cont == 2){
+            //End of first number -> 2 bytes
+            PORTBbits.RB4 = 1;
             PORTBbits.RB4 = 0;//LDAC
             PORTBbits.RB4 = 1;
 
@@ -165,6 +172,7 @@ void __interrupt(irq(IRQ_SPI1TX),base(0x0008)) SPI_isr(){
         else if(cont == 3){
             SPI1TXB = MSB_spi_B;
             cont = 0;
+            
         }
         
     PIR2bits.SPI1TXIF = 0;
@@ -179,7 +187,7 @@ void init_PIC(void){
 }
 
 int main(void) {
-    
+    //Configure priorities interruptions
     INTCON0 = 0xE0; 
     IPR0 = 0x00;
     IPR1 = 0x00;
@@ -192,53 +200,55 @@ int main(void) {
     IPR8 = 0x00;
     IPR9 = 0x00;
     IPR10 = 0x00;
-    
-    
-    
+   
     int status_tx = 0;
     oscillator_module();
+    
+    //Counter that changes the Fs
     counters.count_to = (12*received) - (received-1);
     states.channel_convert = 0;
     states.channel_flag = 1;
     states.convert_done = 0;
     states.value_convert = 0;
    
-    init_PIC();
-    //Ecuacion para los valores: (x*25) - ((x-1))
+    init_PIC(); 
     
     //Ports to measure time
     TRISD = 0x00;
     ANSELD = 0x00;
     TRISAbits.TRISA4 = 0;
     ANSELAbits.ANSELA4 = 0;
+    
     //MAIN LOOP
     while(1){
+           
+        aux_A = states.ADC_number[0] + 4096; //Channel 1 in DAC
+        LSB_spi_A = (char) aux_A;
+        aux_A = aux_A>>8; 
+        MSB_spi_A = (char) aux_A;
 
-        aux_A = states.ADC_number[0] + 4096;
-                LSB_spi_A = (char) aux_A;
-                aux_A = aux_A>>8;
-                MSB_spi_A = (char) aux_A;
-
-                aux_B = states.ADC_number[1] + 36864; //Change channel 
-                LSB_spi_B = (char) aux_B;
-                aux_B = aux_B>>8;
-                MSB_spi_B = (char) aux_B;
-        if(states.read_ADC_flag == 1){
+        aux_B = states.ADC_number[1] + 36864; //Channel 2 in DAC
+        LSB_spi_B = (char) aux_B;
+        aux_B = aux_B>>8;
+        MSB_spi_B = (char) aux_B;
+        
+        
             
-            if(states.convert_done == 0){
+            if(states.convert_done == 0 && states.read_ADC_flag == 1){  
                 
                 states.channel_convert = states.channel_flag;
                 convert_number(&states);
                 states.convert_done = 1;
                 states.value_convert = 1;
+                states.read_ADC_flag = 0;
                 
             }
             
             
                 if(TX_FLAG == 1 && states.convert_done == 1){
-                    
+                   
                     counters.cont_tx++;
-                    //Serial communication works sending each separate by '-' and when the number ends it send '#'
+                    //Serial communication works sending each complete number separate by ',' and when the two number ends it send '\n'
                     if(counters.cont_tx == 1){
                         status_tx = transmit_UART(states.integer[j]);
                     }
@@ -254,24 +264,27 @@ int main(void) {
                             TO_TRANSMIT = 44;
                             j++;
                         }else{
-                            TO_TRANSMIT = 35;
+                            TO_TRANSMIT = 10;
                             j=0;
+                            
                         }
                         
                         states.convert_done = 0;
                         counters.cont_tx = 0;
                     }
-                
+                    
                 TX_FLAG = 0;
                 }
                 
             
-        }
+        
         
         if(counters.cont_rx == 1){
+            //First part of number of 16 bits -> LSB
             received = rx;
             }
             else if(counters.cont_rx == 2){
+                //Second part of number -> MSB
                 rx = (rx<<8);
                 received = (received) |(rx);
                 counters.count_to = (12*received) + 1;

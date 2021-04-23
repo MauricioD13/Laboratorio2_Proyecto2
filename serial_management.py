@@ -9,40 +9,24 @@ while(1):
     
     option = int(input("[1] Leer puerto serial\n[2] Enviar cambio de parametros\n[3]Salir\n"))
     if(option==1):
-        #fileA = open("datosA.csv",'w')
-        #fileB = open("datosB.csv",'w')
-        os.system("receive_serial.exe")
-        os.system("cls")
-
-        fileA = open("data_A.csv","r")
-        fileB = open("data_B.csv","r")
-        dataA = fileA.readline()
-        dataA = dataA.split(",")
-        dataB = fileB.readline()
-        dataB = dataB.split(",")
-        
-        numbersA = []
-        numbersB = []
-        for i in dataA:
+        fileA = open("datosA.csv",'w')
+        fileB = open("datosB.csv",'w')
+        port = serial.Serial('COM9',114285)
+        i = 0
+        while i<3000:
+            data = port.readline()
+            data = data.decode()
+            data = data.split(',')
+            print(data)
             try:
-                numbersA.append(int(i)/100)
-            except:
+                dato_1 = int(data[0])/100
+                dato_2 = int(data[1])/100
+                fileA.write(str(i)+ ',' +str(dato_1)+'\n')
+                fileB.write(str(i)+ ',' + str(dato_2)+ '\n')
+                i += 1
+            except: 
                 continue
-        for j in dataB:
-            try:
-                numbersB.append(int(j)/100)
-            except:
-                continue    
-        fileA.close()    
-        fileB.close()
-        fileA = open("data_A.csv","w")
-        fileB = open("data_B.csv","w")
-        for i in numbersA:
-            fileA.write(str(cont_A) + ","+ str(i)+"\n")
-            cont_A +=1
-        for i in numbersB:
-            fileB.write(str(cont_B) + ","+ str(i)+"\n")
-            cont_B+=1
+        port.close()
         fileA.close()    
         fileB.close()
         
