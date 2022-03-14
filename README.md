@@ -22,3 +22,5 @@ Para un tiempo de muestreo de 100 us se obtuvieron las siguientes reconstruccion
 - Daniel Morantes [Github](https://github.com/DanielMorantes)
 - Joan Muñoz    [Github](https://github.com/JoanFerney99)
 - Mauricio Cuello [Github](https://github.com/MauricioD13)
+
+#### Mas información [aqui](/informe/informe_practica2.pdf)
